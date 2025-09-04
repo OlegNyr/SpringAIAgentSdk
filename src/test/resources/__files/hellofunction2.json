@@ -1,0 +1,28 @@
+{
+  "id": "1849c78f-0970-4424-914f-5688f617a2fd",
+  "object": "chat.completion",
+  "created": 1756133008,
+  "model": "deepseek-chat",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "Токио сегодня сияет\nСолнце светит ярко в небе\nХороший день для прогулок"
+      },
+      "logprobs": null,
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 211,
+    "completion_tokens": 27,
+    "total_tokens": 238,
+    "prompt_tokens_details": {
+      "cached_tokens": 192
+    },
+    "prompt_cache_hit_tokens": 192,
+    "prompt_cache_miss_tokens": 19
+  },
+  "system_fingerprint": "fp_feb633d1f5_prod0820_fp8_kvcache"
+}

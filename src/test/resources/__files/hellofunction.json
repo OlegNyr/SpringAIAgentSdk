@@ -1,0 +1,39 @@
+{
+  "id": "774dfbcf-686f-4a10-b2a4-3d5a6132b47a",
+  "object": "chat.completion",
+  "created": 1755781343,
+  "model": "deepseek-chat",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [
+          {
+            "index": 0,
+            "id": "call_0_3eb929a9-1c0f-4d4d-80bf-75a9c084fd69",
+            "type": "function",
+            "function": {
+              "name": "getWeather",
+              "arguments": "{\"city\": \"Tokyo\"}"
+            }
+          }
+        ]
+      },
+      "logprobs": null,
+      "finish_reason": "tool_calls"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 184,
+    "completion_tokens": 13,
+    "total_tokens": 197,
+    "prompt_tokens_details": {
+      "cached_tokens": 128
+    },
+    "prompt_cache_hit_tokens": 128,
+    "prompt_cache_miss_tokens": 56
+  },
+  "system_fingerprint": "fp_feb633d1f5_prod0820_fp8_kvcache"
+}

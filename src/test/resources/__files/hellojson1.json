@@ -1,0 +1,28 @@
+{
+  "id": "8cf89bdd-fc18-4351-a1a1-e6846cb65f14",
+  "object": "chat.completion",
+  "created": 1756284444,
+  "model": "deepseek-chat",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "Мальчик-программист из крупной ИТ-компании, уставший от рутины, создаёт ИИ, который меняет его жизнь, заставляя переосмыслить баланс между работой и личным счастьем."
+      },
+      "logprobs": null,
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 30,
+    "completion_tokens": 58,
+    "total_tokens": 88,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "prompt_cache_hit_tokens": 0,
+    "prompt_cache_miss_tokens": 30
+  },
+  "system_fingerprint": "fp_feb633d1f5_prod0820_fp8_kvcache"
+}

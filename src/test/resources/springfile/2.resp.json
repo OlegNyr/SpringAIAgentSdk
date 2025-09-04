@@ -1,0 +1,28 @@
+{
+  "id": "c531915f-e568-4a6e-8385-e9b7abac2099",
+  "object": "chat.completion",
+  "created": 1756129258,
+  "model": "deepseek-chat",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "В Токио сегодня ясно,\nСолнце светит ярко, прекрасно.\nПогода хороша для прогулки."
+      },
+      "logprobs": null,
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 211,
+    "completion_tokens": 29,
+    "total_tokens": 240,
+    "prompt_tokens_details": {
+      "cached_tokens": 192
+    },
+    "prompt_cache_hit_tokens": 192,
+    "prompt_cache_miss_tokens": 19
+  },
+  "system_fingerprint": "fp_feb633d1f5_prod0820_fp8_kvcache"
+}

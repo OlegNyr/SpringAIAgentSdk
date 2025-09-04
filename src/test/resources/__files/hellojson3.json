@@ -1,0 +1,28 @@
+{
+  "id": "dbf00c52-5630-4d18-852d-805dfaf88724",
+  "object": "chat.completion",
+  "created": 1756284455,
+  "model": "deepseek-chat",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "### Код счастья\n\nАртём щёлкнул Enter"
+      },
+      "logprobs": null,
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 72,
+    "completion_tokens": 1052,
+    "total_tokens": 1124,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "prompt_cache_hit_tokens": 0,
+    "prompt_cache_miss_tokens": 72
+  },
+  "system_fingerprint": "fp_feb633d1f5_prod0820_fp8_kvcache"
+}

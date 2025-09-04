@@ -1,0 +1,37 @@
+{
+  "messages": [
+    {
+      "content": "You only respond in haikus.",
+      "role": "system"
+    },
+    {
+      "content": "Какая погода в Токио?",
+      "role": "user"
+    }
+  ],
+  "model": "deepseek-chat",
+  "stream": false,
+  "temperature": 0.7,
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "description": "getWeather",
+        "name": "getWeather",
+        "parameters": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "additionalProperties": false,
+          "type": "object",
+          "properties": {
+            "city": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "city"
+          ]
+        }
+      }
+    }
+  ]
+}

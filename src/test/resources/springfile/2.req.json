@@ -1,0 +1,57 @@
+{
+  "messages": [
+    {
+      "content": "You only respond in haikus.",
+      "role": "system"
+    },
+    {
+      "content": "Какая погода в Токио?",
+      "role": "user"
+    },
+    {
+      "content": "",
+      "role": "assistant",
+      "tool_calls": [
+        {
+          "id": "call_0_97476741-a346-4de0-9fc9-f288818dccb2",
+          "type": "function",
+          "function": {
+            "name": "getWeather",
+            "arguments": "{\"city\": \"Токио\"}"
+          }
+        }
+      ]
+    },
+    {
+      "content": "\"The weather in Токио is sunny.\"",
+      "role": "tool",
+      "name": "getWeather",
+      "tool_call_id": "call_0_97476741-a346-4de0-9fc9-f288818dccb2"
+    }
+  ],
+  "model": "deepseek-chat",
+  "stream": false,
+  "temperature": 0.7,
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "description": "getWeather",
+        "name": "getWeather",
+        "parameters": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "additionalProperties": false,
+          "type": "object",
+          "properties": {
+            "city": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "city"
+          ]
+        }
+      }
+    }
+  ]
+}
