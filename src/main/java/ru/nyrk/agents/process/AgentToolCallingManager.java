@@ -2,8 +2,8 @@ package ru.nyrk.agents.process;
 
 import org.springframework.ai.chat.model.ToolContext;
 import ru.nyrk.agents.*;
-import ru.nyrk.agents.item.input.FunctionCallOutput;
 import ru.nyrk.agents.item.ToolCallResultItem;
+import ru.nyrk.agents.item.input.FunctionCallOutput;
 import ru.nyrk.agents.runner.AgentsException;
 
 import java.util.ArrayList;

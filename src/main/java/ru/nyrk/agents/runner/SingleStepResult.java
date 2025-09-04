@@ -3,9 +3,9 @@ package ru.nyrk.agents.runner;
 import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;
+import ru.nyrk.agents.ModelResponse;
 import ru.nyrk.agents.ResponseInputItem;
 import ru.nyrk.agents.RunItem;
-import ru.nyrk.agents.ModelResponse;
 
 import java.util.ArrayList;
 import java.util.Collections;

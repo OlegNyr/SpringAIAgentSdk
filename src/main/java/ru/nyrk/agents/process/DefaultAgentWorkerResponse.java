@@ -4,8 +4,6 @@ import lombok.NonNull;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.util.StringUtils;
 import ru.nyrk.agents.*;
-import ru.nyrk.agents.ResponseInputItem;
-import ru.nyrk.agents.ModelResponse;
 import ru.nyrk.agents.item.AbstractRunItem;
 import ru.nyrk.agents.item.MessageOutputItem;
 import ru.nyrk.agents.models.ResponseOutputMessage;
