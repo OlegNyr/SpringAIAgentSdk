@@ -14,10 +14,11 @@ import org.springframework.ai.tool.metadata.DefaultToolMetadata;
 import org.springframework.ai.util.json.schema.JsonSchemaGenerator;
 import org.springframework.core.ParameterizedTypeReference;
 import ru.nyrk.agents.item.MessageOutputItem;
+import ru.nyrk.agents.item.Role;
+import ru.nyrk.agents.item.input.EasyInputMessageParam;
 import ru.nyrk.agents.models.ResponseOutputMessage;
 
 import java.util.List;
-import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -94,9 +95,9 @@ public class Agent {
     ///
     /// 2. При передаче обслуживания новый агент принимает управление разговором. В этом инструменте новый агент
     /// вызывается как инструмент, и разговор продолжается исходным агентом.
-    public ToolCallback makeTool(AgentRunner agentRunner, String toolName, String toolDescription) {
+    public ToolCallback makeTool(AgentRunners agentRunner, String toolName, String toolDescription) {
         Function<ToolAgentParam, String> function = (ToolAgentParam param) -> {
-            var res = agentRunner.run(this, param.input());
+            var res = agentRunner.run(this, List.of(new EasyInputMessageParam(param.input(), Role.USER)));
             return joinResponse(res);
         };
 

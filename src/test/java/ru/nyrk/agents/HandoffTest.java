@@ -1,9 +1,8 @@
 package ru.nyrk.agents;
 
 import org.junit.jupiter.api.Test;
-import ru.nyrk.agents.runner.DefaultAgentRunner;
 
-import static ru.nyrk.client.ClientFactoryFactory.DEEPSEEK;
+import static ru.nyrk.client.ClientFactoryFactory.GIGACHAT;
 
 public class HandoffTest extends Config {
     @Test
@@ -28,9 +27,10 @@ public class HandoffTest extends Config {
                 .agent(mathTutorAgent)
                 .build();
 
-        AgentRunner agentRunner = new DefaultAgentRunner(makeModel(DEEPSEEK));
 
-        RunResult runResult = agentRunner.run(triageAgent, "кто был первым президентом Соединенных Штатов?");
+        var model = AgentRunners.runner().model(makeModel(GIGACHAT));
+        RunResult<String> runResult = model
+                .run(triageAgent, "кто был первым президентом Соединенных Штатов?");
 
         System.out.println(runResult.getFinalOutput());
     }

@@ -2,17 +2,15 @@ package ru.nyrk;
 
 import org.springframework.ai.chat.model.ChatModel;
 import ru.nyrk.agents.Agent;
-import ru.nyrk.agents.AgentRunner;
+import ru.nyrk.agents.AgentRunners;
+import ru.nyrk.agents.InputFiltersUtils;
 import ru.nyrk.agents.RunResult;
-import ru.nyrk.agents.item.input.EasyInputMessageParam;
-import ru.nyrk.agents.item.Role;
-import ru.nyrk.agents.runner.DefaultAgentRunner;
 import ru.nyrk.client.ChatClientFactory;
 import ru.nyrk.client.ClientFactoryFactory;
 
 public class Example {
     public static void main(String[] args) {
-        ChatClientFactory<?> chatClientFactory = ClientFactoryFactory.chatClientFactory(ClientFactoryFactory.DEEPSEEK);
+        ChatClientFactory<?> chatClientFactory = ClientFactoryFactory.chatClientFactory(ClientFactoryFactory.GIGACHAT);
         ChatModel chatModel = chatClientFactory.makeModel(null);
 
         Agent historyTutorAgent = Agent.builder()
@@ -34,15 +32,14 @@ public class Example {
                 .agent(mathTutorAgent)
                 .build();
 
+        AgentRunners agentRunnersDefault = AgentRunners.runner()
+                .model(chatModel)
+                .handoffInputFilter(InputFiltersUtils::removeAllTools)
+                .create();
 
-        EasyInputMessageParam input = EasyInputMessageParam.builder()
-                .content("What is the capital of France?")
-                .role(Role.USER)
-                .build();
-
-        AgentRunner agentRunner = new DefaultAgentRunner(chatModel);
-
-        RunResult<?> runResult = agentRunner.run(triageAgent, "What is the capital of France?");
+        RunResult<String> runResult = agentRunnersDefault.copy()
+                .temperature(1.0D)
+                .run(triageAgent, "What is the capital of France?");
 
         System.out.println(runResult.getFinalOutput());
     }

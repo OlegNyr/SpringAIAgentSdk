@@ -10,23 +10,24 @@ import org.springframework.ai.chat.model.Generation;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.definition.DefaultToolDefinition;
 import org.springframework.ai.tool.definition.ToolDefinition;
+import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 import ru.nyrk.agents.Handoff;
 import ru.nyrk.agents.ResponseInputItem;
 import ru.nyrk.agents.ResponseOutputItem;
-import ru.nyrk.agents.item.*;
+import ru.nyrk.agents.item.Role;
 import ru.nyrk.agents.item.input.EasyInputMessageParam;
 import ru.nyrk.agents.item.input.FunctionCallOutput;
 import ru.nyrk.agents.item.input.ResponseOutputMessageParam;
+import ru.nyrk.agents.item.input.ResponseReasoningItemParam;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Slf4j
 public class Converter {
-    public static final String FAKE_RESPONSES_ID = "__fake_id__";
-
     /**
      * Convert a sequence of 'Item' objects into a list of ChatCompletionMessageParam.
      * <p>
@@ -39,32 +40,41 @@ public class Converter {
      * - tool calls get attached to the *current* assistant message, or create one if none.
      * - tool outputs => ChatCompletionToolMessageParam
      *
-     * @param input
-     * @return
      * @link D:\IdeaProjects\agents\mybackend\Lib\site-packages\agents\models\chatcmpl_converter.py#items_to_messages
      */
     public static List<Message> itemsToMessages(List<ResponseInputItem> input) {
         List<Message> messages = new ArrayList<Message>();
         for (ResponseInputItem item : input) {
-            if (item instanceof EasyInputMessageParam e) {
-                if (e.role() == Role.USER) {
-                    messages.add(new UserMessage(e.content()));
-                } else if (e.role() == Role.ASSISTANT) {
-                    messages.add(new AssistantMessage(e.content()));
-                } else {
-                    throw new IllegalArgumentException("Ошибка роли");
+            switch (item) {
+                case EasyInputMessageParam(String content, Role role) -> {
+                    if (role == Role.USER) {
+                        messages.add(new UserMessage(content));
+                    } else if (role == Role.ASSISTANT) {
+                        messages.add(new AssistantMessage(content));
+                    } else {
+                        throw new IllegalArgumentException("Ошибка роли");
+                    }
                 }
-            } else if (item instanceof ResponseOutputMessageParam p) {
-                messages.add(new AssistantMessage("", Map.of(),
-                        List.of(new AssistantMessage.ToolCall(p.getCallId(), "function", p.getName(), p.getArguments())))
-                );
-            } else if (item instanceof FunctionCallOutput r) {
-                messages.add(new ToolResponseMessage(List.of(new ToolResponseMessage.ToolResponse(r.getCallId(), r.getName(), r.getResult()))));
-            } else {
-                throw new IllegalArgumentException("Ошибка типа");
+                case ResponseOutputMessageParam p ->
+                        messages.add(
+                                new AssistantMessage("", Map.of(), List.of(makeToolCall(p)))
+                        );
+                case FunctionCallOutput r -> messages.add(new ToolResponseMessage(List.of(makeToolResponse(r))));
+                case ResponseReasoningItemParam responseReasoningItemParam -> {
+                    //ignore
+                }
+                case null, default -> throw new IllegalArgumentException("Ошибка типа");
             }
         }
         return messages;
+    }
+
+    private static ToolResponseMessage.ToolResponse makeToolResponse(FunctionCallOutput r) {
+        return new ToolResponseMessage.ToolResponse(r.getCallId(), r.getName(), r.getResult());
+    }
+
+    private static AssistantMessage.ToolCall makeToolCall(ResponseOutputMessageParam p) {
+        return new AssistantMessage.ToolCall(p.getCallId(), "function", p.getName(), p.getArguments());
     }
 
     public static List<ResponseOutputItem> messageToOutputItems(Generation result) {
@@ -73,6 +83,10 @@ public class Converter {
         }
         List<ResponseOutputItem> items = new ArrayList<>();
         AssistantMessage output = result.getOutput();
+
+        findReasoningContent(output)
+                .ifPresent(res -> items.add(ResponseReasoningItem.of(res, Role.ASSISTANT)));
+
         if (StringUtils.hasText(output.getText())) {
             items.add(ResponseOutputMessage.of(output.getText(), Role.ASSISTANT));
         }
@@ -93,6 +107,13 @@ public class Converter {
             }
         }
         return items;
+    }
+
+    private static Optional<String> findReasoningContent(AssistantMessage output) {
+        return Optional.ofNullable(ReflectionUtils.findMethod(output.getClass(), "getReasoningContent"))
+                .map(method -> ReflectionUtils.invokeMethod(method, output))
+                .map(String.class::cast)
+                .filter(StringUtils::hasText);
     }
 
     public static ToolCallback toolHandoffTool(Handoff handoff) {

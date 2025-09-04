@@ -3,10 +3,9 @@ package ru.nyrk.agents;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import ru.nyrk.agents.runner.DefaultAgentRunner;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.containing;
-import static ru.nyrk.client.ClientFactoryFactory.STUB;
+import static ru.nyrk.client.ClientFactoryFactory.*;
 
 @WireMockTest(httpPort = 3000)
 public class HelloJsonTest extends Config {
@@ -31,30 +30,34 @@ public class HelloJsonTest extends Config {
                 .build();
         mockSystem(containing("Write a short story based on the given outline."), "hellojson3.json");
 
-        AgentRunner agentRunner = new DefaultAgentRunner(makeModel(STUB));
+        var agentRunner = AgentRunners.runner().model(makeModel(DEEPSEEK));
 
-        RunResult<?> outlineResult = agentRunner.run(storyOutlineAgent, "История о жизни мальчика, в большой ИТ компании");
+
+        RunResult<String> outlineResult = agentRunner
+                .copy()
+                .temperature(1.5D)
+                .run(storyOutlineAgent, "История о жизни мальчика, в большой ИТ компании будущего с ИИ");
+
         System.out.println("Outline generated");
-        RunResult<?> outlineCheckerResult = agentRunner.run(
+        RunResult<OutlineCheckerOutput> outlineCheckerResult = agentRunner.run(
                 outlineCheckerAgent,
                 outlineResult.getFinalOutput()
         );
 
-        if (!(outlineCheckerResult.getFinalOutput() instanceof OutlineCheckerOutput o)) {
-            throw new IllegalArgumentException("Output forma type %s".formatted(outlineCheckerResult.getFinalOutput().getClass()));
-        }
-        if (!o.goodQuality()) {
+        if (!outlineCheckerResult.getFinalOutput().goodQuality()) {
             Assertions.fail("Качество плана не очень хорошее, поэтому на этом остановимся.");
         }
 
-        if (!o.scifi()) {
+        if (!outlineCheckerResult.getFinalOutput().scifi()) {
             Assertions.fail("План — это не научно-фантастический рассказ, поэтому мы на этом остановимся.");
         }
 
         System.out.println("План качественный и представляет собой научно-фантастическую историю, поэтому мы продолжаем писать ее.");
-        var storyResult = agentRunner.run(storyAgent, outlineResult.getFinalOutput());
+        var storyResult = agentRunner
+                .copy()
+                .maxTokens(3000)
+                .run(storyAgent, outlineResult.getFinalOutput());
         Assertions.assertEquals("### Код счастья\n\nАртём щёлкнул Enter", storyResult.getFinalOutput());
-
     }
 
     record OutlineCheckerOutput(boolean goodQuality, boolean scifi) {

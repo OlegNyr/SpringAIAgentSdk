@@ -1,6 +1,7 @@
 package ru.nyrk.agents;
 
 import lombok.Builder;
+import lombok.NonNull;
 import lombok.Value;
 import org.springframework.ai.util.json.JsonParser;
 import org.springframework.ai.util.json.schema.JsonSchemaGenerator;
@@ -76,13 +77,9 @@ public class Handoff {
      * агента и возвращает, включена ли передача. Вы можете использовать это для динамического включения/отключения
      * передачи на основе вашего контекста/состояния(пока не реализованно).
      */
-    @Builder.Default
-    BiPredicate<AgentContext, Agent> enabled = (c, baseAgent) -> true;
+    @NonNull
+    BiPredicate<AgentContext, Agent> enabled;
 
-
-    public static Handoff makeHandoff(Agent agent) {
-        return Handoff.builder().agent(agent).build();
-    }
 
     public String getTransferMessage(Agent agent) {
         return "{\"assistant\": \"%s\"}".formatted(agent.getName());
@@ -121,8 +118,13 @@ public class Handoff {
             return this;
         }
 
-        public HandoffBuilder<T> enabled(boolean value) {
-            enabled((c, a) -> value);
+        public HandoffBuilder<T> enabled(BiPredicate<AgentContext, Agent> predicate) {
+            this.enabled = predicate;
+            return this;
+        }
+
+        public HandoffBuilder<T> enabled(final boolean vl) {
+            enabled((c, a) -> vl);
             return this;
         }
 
@@ -136,9 +138,8 @@ public class Handoff {
                 }
             }
 
-            var enabled$value = this.enabled$value;
-            if (!this.enabled$set) {
-                enabled$value = (context, agent) -> true;
+            if (this.enabled == null) {
+                this.enabled = (context, agent) -> true;
             }
             if (this.agentName == null) {
                 Objects.requireNonNull(agent, "Agent and agentName not null");
@@ -175,7 +176,7 @@ public class Handoff {
                     onLocalHandoff,
                     this.agentName,
                     this.inputFilter,
-                    enabled$value);
+                    this.enabled);
         }
 
         private static String defaultToolDescription(Agent agent) {

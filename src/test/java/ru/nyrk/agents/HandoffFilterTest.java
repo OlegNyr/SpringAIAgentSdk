@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Test;
 import ru.nyrk.agents.item.Role;
 import ru.nyrk.agents.item.input.EasyInputMessageParam;
 import ru.nyrk.agents.process.HandoffInputData;
-import ru.nyrk.agents.runner.DefaultAgentRunner;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -14,8 +13,7 @@ import java.util.Random;
 import java.util.function.Function;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
-import static ru.nyrk.client.ClientFactoryFactory.DEEPSEEK;
-import static ru.nyrk.client.ClientFactoryFactory.STUB;
+import static ru.nyrk.client.ClientFactoryFactory.*;
 
 @WireMockTest(httpPort = 3000)
 public class HandoffFilterTest extends Config {
@@ -59,16 +57,18 @@ public class HandoffFilterTest extends Config {
                 .handoff(Handoff.builder().agent(spanishAgent).inputFilter(inputFilter).build())
                 .build();
 
-        AgentRunner agentRunner = new DefaultAgentRunner(makeModel(STUB));
+        AgentRunners.AgentRunnersClient runner = AgentRunners.runner();
+
 
         mockSystem(containing("Be extremely concise."), "handoffFilterTest1.json");
 
-        var result = agentRunner.run(firstAgent, "Привет, меня зовут Сара");
+        var result = runner.model(makeModel(GIGACHAT)).run(firstAgent, "Привет, меня зовут Сара");
 
 
         System.out.println("Step 1 done");
 
-        AgentRunner agentRunnerDepseek = new DefaultAgentRunner(makeModel(DEEPSEEK));
+        var agentRunnerDepseek = runner.model(makeModel(GIGACHAT));
+
         result = agentRunnerDepseek.run(
                 firstAgent,
                 join(result.makeInputList(),

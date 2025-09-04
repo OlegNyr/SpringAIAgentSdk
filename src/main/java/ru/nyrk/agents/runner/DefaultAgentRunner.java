@@ -1,14 +1,9 @@
 package ru.nyrk.agents.runner;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.tool.ToolCallback;
 import ru.nyrk.agents.*;
-import ru.nyrk.agents.item.*;
-import ru.nyrk.agents.item.input.EasyInputMessageParam;
-import ru.nyrk.agents.models.AgentModel;
-import ru.nyrk.agents.ModelResponse;
+import ru.nyrk.agents.models.AgentClientSpring;
 import ru.nyrk.agents.process.AgentWorkerResponse;
 import ru.nyrk.agents.process.DefaultAgentWorkerResponse;
 
@@ -18,48 +13,52 @@ import java.util.List;
 /**
  * https://openai.github.io/openai-agents-python/running_agents/
  */
-@RequiredArgsConstructor
 @Slf4j
-public class DefaultAgentRunner implements AgentRunner {
+public class DefaultAgentRunner<T> {
 
-    private final ChatModel chatModel;
-    private final AgentWorkerResponse agentWorkerResponse = new DefaultAgentWorkerResponse();
+    private final AgentWorkerResponse agentWorkerResponse;
 
-    /// @see DefaultAgentRunner#run
-    @Override
-    public <T> RunResult<T> run(Agent startingAgent, Object user) {
-
-        List<ResponseInputItem> input = switch (user) {
-            case String txt -> List.of(new EasyInputMessageParam(txt, Role.USER));
-            case ResponseInputItem inputCast -> List.of(inputCast);
-            case List<?> inputList -> inputList.stream()
-                    .filter(ResponseInputItem.class::isInstance)
-                    .map(ResponseInputItem.class::cast)
-                    .toList();
-            case null, default -> throw new IllegalArgumentException("user is not a string");
-        };
-        return run(startingAgent,
-                input,
-                new AgentContextDefault(),
-                10,
-                AgentHooks.NONE,
-                new RunConfig()
-        );
+    public DefaultAgentRunner(AgentWorkerResponse agentWorkerResponse) {
+        this.agentWorkerResponse = agentWorkerResponse;
     }
 
-    /**
-     * @inheritDoc
-     */
-    @Override
-    public <T> RunResult<T> run(Agent startingAgent,
-                                List<ResponseInputItem> input,
-                                AgentContext agentContext,
-                                Integer maxTurns,
-                                AgentHooks agentHooks,
-                                RunConfig runConfig) {
+    public DefaultAgentRunner() {
+        this.agentWorkerResponse = new DefaultAgentWorkerResponse();
+    }
+
+    /// Запускает рабочий процесс, начиная с указанного агента.
+    /// Агент будет работать в цикле, пока не будет сгенерирован конечный выход.
+    ///
+    /// Цикл выполняется следующим образом:
+    /// 1. Агент вызывается с указанными входными данными.
+    /// 2. Если есть конечный вывод (т.е. агент выдаёт что-то типа `agent.outputType`), цикл завершается.
+    /// 3. Если происходит передача управления, мы снова запускаем цикл с новым агентом.
+    /// 4. В противном случае мы выполняем вызовы инструментов (если таковые имеются) и перезапускаем цикл.
+    ///
+    /// В двух случаях агент может сгенерировать исключение:
+    /// 1. При превышении максимального количества ходов (maxTurns) возникает исключение MaxTurnsExceeded.
+    /// 2. При срабатывании ограничительного барьера (guardrail tripwire) возникает исключение GuardrailTripwireTriggered.
+    /// Обратите внимание, что запускаются только входные ограничительные барьеры первого агента.
+    ///
+    /// @param startingAgent Начальный агент для запуска.
+    /// @param input         Начальные входные данные для агента. Вы можете передать одну строку для пользовательского сообщения
+    ///                                                                                                                                                                                                                                                                                                                                                                                                                                                      или список входных элементов.
+    /// @param agentContext  Контекст для запуска агента.
+    /// @param maxTurns      Максимальное количество ходов для запуска агента. Ход определяется как один
+    ///                                                                                                                                                                                                                                                                                                                                                                                                                                                      вызов ИИ (включая любые возможные вызовы инструментов).
+    /// @param agentHooks    объект, принимающий обратные вызовы при различных событиях жизненного цикла.
+    /// @param runConfig     глобальные настройки для всего запуска агента.
+    /// @return результат запуска, содержащий все входные данные, результаты проверки и выходные данные последнего
+    ///         агента. Агенты могут выполнять передачи, поэтому мы не знаем конкретный тип выходных данных.
+    public RunResult<T> run(Agent startingAgent,
+                            List<ResponseInputItem> input,
+                            AgentContext agentContext,
+                            Integer maxTurns,
+                            AgentHooks agentHooks,
+                            RunConfig runConfig) {
         AgentToolUseTracker toolUseTracker = new AgentToolUseTracker();
         int currentTurn = 0;
-        List<ResponseInputItem> originalInput = List.copyOf(input);
+        List<ResponseInputItem> originalInput = input;
         List<RunItem<?>> generatedItems = List.of();
         Agent currentAgent = startingAgent;
 
@@ -94,25 +93,29 @@ public class DefaultAgentRunner implements AgentRunner {
             generatedItems = turnResult.unionGeneratedItems();
 
 
-            if (turnResult.getNextStep() instanceof NextStepFinalOutput stepFinalOutput) {
-                //Финальный статус
-                //todo разобраться с дженереками
-                return (RunResult<T>) RunResult.builder()
-                        .input(originalInput)
-                        .newItems(generatedItems)
-                        .rawResponses(modelResponses)
-                        .finalOutput(stepFinalOutput.output())
-                        .lastAgent(currentAgent)
-                        .context(agentContext)
-                        .build();
-            } else if (turnResult.getNextStep() instanceof NextStepHandoff stepHandoff) {
-                currentAgent = stepHandoff.newAgent();
-                shouldRunAgentStartHooks = true;
-                log.debug("Передаем управление агенту \"{}\"", currentAgent.getName());
-            } else if (turnResult.getNextStep() instanceof NextStepRunAgain) {
-                log.debug("Следующая итерация");
-            } else {
-                throw new AgentsException("Unknown next step type: %s".formatted(turnResult.getNextStep().getClass()));
+            switch (turnResult.getNextStep()) {
+                case NextStepFinalOutput(Object output) -> {
+                    //Финальный статус
+                    T finalOutput = (T) output;
+
+                    return RunResult.<T>builder()
+                            .input(originalInput)
+                            .newItems(generatedItems)
+                            .rawResponses(modelResponses)
+                            .finalOutput(finalOutput)
+                            .lastAgent(currentAgent)
+                            .context(agentContext)
+                            .build();
+                }
+                case NextStepHandoff(Agent newAgent) -> {
+                    currentAgent = newAgent;
+                    shouldRunAgentStartHooks = true;
+                    log.debug("Передаем управление агенту \"{}\"", currentAgent.getName());
+                }
+                case NextStepRunAgain nextStepRunAgain -> log.debug("Следующая итерация");
+                default ->
+                        throw new AgentsException("Unknown next step type: %s"
+                                .formatted(turnResult.getNextStep().getClass()));
             }
         }
 
@@ -137,13 +140,13 @@ public class DefaultAgentRunner implements AgentRunner {
 
         AgentOutputSchemaBase<?> outputSchema = new AgentOutputSchemaBase<>(agent.getOutputType());
 
-        List<Handoff> handoffs = getHandoffs(agent, agentContext);
+        List<Handoff> handoffs = getHandoffs(agent, agentContext, runConfig);
         //Преобразуем входящие элементы в понятный формат
         List<ResponseInputItem> input = new ArrayList<>(originalInput);
         //Преобразуем входящие действия в формат который можно передать LLM
         generatedItems.forEach(g -> input.add(g.makeInputItem()));
 
-        AgentModel agentModel = new AgentModel(chatModel);
+        AgentClientSpring agentModel = new AgentClientSpring(runConfig);
 
         ModelResponse newResponse = agentModel.call(
                 agent,
@@ -152,8 +155,7 @@ public class DefaultAgentRunner implements AgentRunner {
                 outputSchema,
                 tools,
                 handoffs,
-                agentContext,
-                runConfig
+                agentContext
         );
 
         agentContext.addUsage(newResponse.usage());
@@ -173,10 +175,12 @@ public class DefaultAgentRunner implements AgentRunner {
         );
     }
 
-    private List<Handoff> getHandoffs(Agent agent, AgentContext agentContext) {
+    private List<Handoff> getHandoffs(Agent agent, AgentContext agentContext, RunConfig runConfig) {
         List<Handoff> handoffs = new ArrayList<>(agent.getHandoffs());
         for (Agent agentHandoff : agent.getHandoffAgents()) {
-            handoffs.add(Handoff.makeHandoff(agentHandoff));
+            handoffs.add(Handoff.builder().agent(agentHandoff)
+                    .inputFilter(runConfig.getHandoffInputFilter())
+                    .build());
         }
 
         return handoffs.stream()

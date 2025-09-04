@@ -5,12 +5,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.support.ToolCallbacks;
-import ru.nyrk.agents.runner.DefaultAgentRunner;
 
 import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.containing;
-import static ru.nyrk.client.ClientFactoryFactory.STUB;
+import static ru.nyrk.client.ClientFactoryFactory.GIGACHAT;
 
 @Slf4j
 @WireMockTest(httpPort = 3000)
@@ -29,9 +28,11 @@ public class HelloFunctionTest extends Config {
                 .tools(List.of(ToolCallbacks.from(new CustomTools())))
                 .build();
 
-        AgentRunner agentRunner = new DefaultAgentRunner(makeModel(STUB));
+        var agentRunner = AgentRunners.runner().model(makeModel(GIGACHAT));
 
-        RunResult runResult = agentRunner.run(agent, "Какая погода в Токио?");
+        RunResult<String> runResult = agentRunner
+
+                .run(agent, "Какая погода в Токио?");
 
         Assertions.assertEquals("Токио сегодня сияет\nСолнце светит ярко в небе\nХороший день для прогулок", runResult.getFinalOutput());
     }
