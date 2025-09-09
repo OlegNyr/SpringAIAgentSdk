@@ -1,16 +1,21 @@
 package ru.nyrk.agents;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.containing;
 import static ru.nyrk.client.ClientFactoryFactory.*;
 
+@Slf4j
 @WireMockTest(httpPort = 3000)
 public class HelloJsonTest extends Config {
+
+
     @Test
     void test1() {
+
         Agent storyOutlineAgent = Agent.builder()
                 .name("story_outline_agent")
                 .instructions("Generate a very short story outline based on the user's input.")
@@ -33,16 +38,17 @@ public class HelloJsonTest extends Config {
         var agentRunner = AgentRunners.runner().model(makeModel(DEEPSEEK));
 
 
+
         RunResult<String> outlineResult = agentRunner
                 .copy()
-                .temperature(1.5D)
+                .temperature(1.0D)
+                .modelName("deepseek-reasoner")
                 .run(storyOutlineAgent, "История о жизни мальчика, в большой ИТ компании будущего с ИИ");
 
         System.out.println("Outline generated");
-        RunResult<OutlineCheckerOutput> outlineCheckerResult = agentRunner.run(
-                outlineCheckerAgent,
-                outlineResult.getFinalOutput()
-        );
+        RunResult<OutlineCheckerOutput> outlineCheckerResult = agentRunner.copy()
+                .model(makeModel(GIGACHAT))
+                .run(outlineCheckerAgent, outlineResult.getFinalOutput());
 
         if (!outlineCheckerResult.getFinalOutput().goodQuality()) {
             Assertions.fail("Качество плана не очень хорошее, поэтому на этом остановимся.");
