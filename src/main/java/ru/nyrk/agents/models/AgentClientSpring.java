@@ -1,6 +1,5 @@
 package ru.nyrk.agents.models;
 
-import io.micrometer.observation.ObservationRegistry;
 import lombok.NonNull;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.Message;

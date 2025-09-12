@@ -2,7 +2,6 @@ package ru.nyrk.agents;
 
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ToolContext;
@@ -22,7 +21,6 @@ import ru.nyrk.agents.models.ResponseOutputMessage;
 
 import java.util.List;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 
@@ -78,9 +76,8 @@ public class Agent {
      */
     StructuredOutputConverter<?> outputType;
 
-    @Builder.Default
     @Singular("advisor")
-    List<Advisor> advisors = List.of();
+    List<Advisor> advisors;
 
     @NonNull
     @Builder.Default
@@ -143,20 +140,6 @@ public class Agent {
             return new BuilderToolFunction<I, O>(this, toolFunction, inputType);
         }
 
-
-        public AgentBuilder advisors(Consumer<ChatClient.AdvisorSpec> consumer) {
-            return this;
-        }
-
-        public AgentBuilder advisors(Advisor... advisors) {
-            advisors(List.of(advisors));
-            return this;
-        }
-
-        public AgentBuilder advisors(List<Advisor> advisors) {
-            this.advisors.addAll(advisors);
-            return this;
-        }
     }
 
     public static class BuilderToolFunction<I, O> {
