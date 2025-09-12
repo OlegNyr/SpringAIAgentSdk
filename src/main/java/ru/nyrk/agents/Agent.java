@@ -126,7 +126,7 @@ public class Agent {
         }
 
         public AgentBuilder outputType(final StructuredOutputConverter<?> type) {
-            this.outputType = outputType;
+            this.outputType = type;
             return this;
         }
 
