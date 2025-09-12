@@ -40,13 +40,13 @@ public class HelloJsonTest extends Config {
 
 
         RunResult<String> outlineResult = agentRunner
-                .copy()
+                .mutate()
                 .temperature(1.0D)
                 .modelName("deepseek-reasoner")
                 .run(storyOutlineAgent, "История о жизни мальчика, в большой ИТ компании будущего с ИИ");
 
         System.out.println("Outline generated");
-        RunResult<OutlineCheckerOutput> outlineCheckerResult = agentRunner.copy()
+        RunResult<OutlineCheckerOutput> outlineCheckerResult = agentRunner.mutate()
                 .model(makeModel(GIGACHAT))
                 .run(outlineCheckerAgent, outlineResult.getFinalOutput());
 
@@ -60,9 +60,11 @@ public class HelloJsonTest extends Config {
 
         System.out.println("План качественный и представляет собой научно-фантастическую историю, поэтому мы продолжаем писать ее.");
         var storyResult = agentRunner
-                .copy()
+                .mutate()
                 .maxTokens(3000)
                 .run(storyAgent, outlineResult.getFinalOutput());
+
+
         Assertions.assertEquals("### Код счастья\n\nАртём щёлкнул Enter", storyResult.getFinalOutput());
     }
 

@@ -1,8 +1,10 @@
 package ru.nyrk.agents;
 
+import io.micrometer.observation.ObservationRegistry;
 import lombok.*;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.ChatOptions;
+import org.springframework.ai.template.TemplateRenderer;
 import ru.nyrk.agents.process.HandoffInputData;
 
 import java.util.Map;
@@ -63,4 +65,11 @@ public class RunConfig {
      */
     @With
     private Map<String, Object> traceMetadata;
+
+
+    @With
+    ObservationRegistry observationRegistry;
+
+    @With
+    TemplateRenderer templateRenderer;
 }

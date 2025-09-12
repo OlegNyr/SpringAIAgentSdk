@@ -1,6 +1,8 @@
 package ru.nyrk.agents.models;
 
+import io.micrometer.observation.ObservationRegistry;
 import lombok.NonNull;
+import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.metadata.ChatResponseMetadata;
@@ -39,6 +41,7 @@ public class AgentClientSpring {
      * @param tools        The tools available to the model.
      * @param handoffs     The handoffs available to the model.
      * @param agentContext Контекст
+     * @param agentHooks
      * @return The full model response.
      */
     public ModelResponse call(Agent agent,
@@ -47,7 +50,8 @@ public class AgentClientSpring {
                               @NonNull AgentOutputSchemaBase<?> outputSchema,
                               List<ToolCallback> tools,
                               List<Handoff> handoffs,
-                              AgentContext agentContext) {
+                              AgentContext agentContext,
+                              AgentHooks agentHooks) {
         List<Message> messages = Converter.itemsToMessages(input);
         if (StringUtils.hasText(systemPrompt)) {
             messages.addFirst(new SystemMessage(systemPrompt));
@@ -84,8 +88,16 @@ public class AgentClientSpring {
                             .build());
         }
 
+        ChatResponse response = ChatClient.create(localChatModel, runConfig.getObservationRegistry())
+                .prompt(prompt)
+                .advisors(agent.getAdvisors())
+                .advisors(agentHooks)
 
-        ChatResponse response = localChatModel.call(prompt);
+                .templateRenderer(runConfig.getTemplateRenderer())
+                .call()
+                .chatResponse();
+
+        localChatModel.call(prompt);
 
         List<ResponseOutputItem> items = Converter.messageToOutputItems(response.getResult());
 

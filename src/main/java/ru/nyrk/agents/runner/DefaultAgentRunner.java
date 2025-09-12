@@ -155,7 +155,8 @@ public class DefaultAgentRunner<T> {
                 outputSchema,
                 tools,
                 handoffs,
-                agentContext
+                agentContext,
+                agentHooks
         );
 
         agentContext.addUsage(newResponse.usage());

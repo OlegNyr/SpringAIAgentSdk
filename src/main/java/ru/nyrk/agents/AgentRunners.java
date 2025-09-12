@@ -1,12 +1,15 @@
 package ru.nyrk.agents;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.micrometer.observation.ObservationRegistry;
 import lombok.Builder;
 import lombok.Value;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.chat.prompt.DefaultChatOptions;
 import org.springframework.ai.model.ModelOptionsUtils;
+import org.springframework.ai.template.TemplateRenderer;
+import org.springframework.ai.template.st.StTemplateRenderer;
 import ru.nyrk.agents.item.Role;
 import ru.nyrk.agents.item.input.EasyInputMessageParam;
 import ru.nyrk.agents.process.HandoffInputData;
@@ -19,6 +22,8 @@ import java.util.function.Function;
 @Builder(toBuilder = true, builderMethodName = "runner", buildMethodName = "create", builderClassName = "AgentRunnersClient")
 @Value
 public class AgentRunners {
+    private static final TemplateRenderer DEFAULT_TEMPLATE_RENDERER = StTemplateRenderer.builder().build();
+
     /**
      * Модель для использования во всем запуске агента. Если установлена, переопределяет модель,
      * установленную для каждого агента.
@@ -30,15 +35,19 @@ public class AgentRunners {
      * специфичные для агента настройки модели.
      */
     ChatOptions chatOptions;
-
-
     Double temperature;
+
+    @Builder.Default
+    ObservationRegistry observationRegistry = ObservationRegistry.NOOP;
+
     @Builder.Default
     Integer maxTokens = 1000;
     String modelName;
     Integer topK;
     Double topP;
 
+    @Builder.Default
+    TemplateRenderer templateRenderer = DEFAULT_TEMPLATE_RENDERER;
     /**
      * Глобальный фильтр входных данных для применения ко всем передачам управления. Если
      * установлен `Handoff.inputFilter`, он будет иметь приоритет. Фильтр входных данных позволяет
@@ -77,6 +86,8 @@ public class AgentRunners {
         }
         RunConfig runConfig = RunConfig.builder()
                 .chatOptions(chatOptionsLocal)
+                .observationRegistry(observationRegistry)
+                .templateRenderer(templateRenderer)
                 .model(model)
                 .build();
         return agentRunner.run(startingAgent, List.copyOf(input), agentContext, maxTurns, agentHooks, runConfig);
@@ -94,7 +105,7 @@ public class AgentRunners {
             return this;
         }
 
-        public AgentRunnersClient copy() {
+        public AgentRunnersClient mutate() {
             return this.create().copy();
         }
 
