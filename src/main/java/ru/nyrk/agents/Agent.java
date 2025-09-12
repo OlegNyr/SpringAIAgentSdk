@@ -12,6 +12,7 @@ import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.execution.DefaultToolCallResultConverter;
 import org.springframework.ai.tool.function.FunctionToolCallback;
 import org.springframework.ai.tool.metadata.DefaultToolMetadata;
+import org.springframework.ai.tool.metadata.ToolMetadata;
 import org.springframework.ai.util.json.schema.JsonSchemaGenerator;
 import org.springframework.core.ParameterizedTypeReference;
 import ru.nyrk.agents.item.MessageOutputItem;
@@ -34,6 +35,7 @@ import java.util.function.Function;
 @ToString(exclude = {"handoffs", "handoffAgents"})
 public class Agent {
 
+    public static final ToolMetadata TOOL_METADATA_EMPTY = DefaultToolMetadata.builder().build();
     /**
      * Обязательная строка, идентифицирующая вашего агента.
      */
@@ -110,7 +112,7 @@ public class Agent {
                 .inputType(ToolAgentParam.class)
                 .inputSchema(JsonSchemaGenerator.generateForType(ToolAgentParam.class))
                 .inputType(ParameterizedTypeReference.forType(ToolAgentParam.class))
-                .toolMetadata(DefaultToolMetadata.builder().build())
+                .toolMetadata(TOOL_METADATA_EMPTY)
                 .toolCallResultConverter(new DefaultToolCallResultConverter())
                 .build();
     }
@@ -175,7 +177,7 @@ public class Agent {
                     .inputType(type)
                     .inputSchema(JsonSchemaGenerator.generateForType(type))
                     .inputType(ParameterizedTypeReference.forType(type))
-                    .toolMetadata(DefaultToolMetadata.builder().build())
+                    .toolMetadata(TOOL_METADATA_EMPTY)
                     .toolCallResultConverter(new DefaultToolCallResultConverter())
                     .build();
 
